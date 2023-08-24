@@ -4,11 +4,10 @@ use std::net::SocketAddr;
 
 use anyhow::{Context, Result};
 use orka_proto::node_agent::workload_service_server::WorkloadServiceServer;
-use tonic::transport::{Identity, Server, ServerTlsConfig};
+use tonic::transport::Server;
 use tower_http::trace::TraceLayer;
 use tracing::{event, Level};
 
-use crate::tls::manager::TlsManager;
 
 use super::{
     scheduler_workload_service::WorkloadSvc
@@ -18,9 +17,6 @@ use super::{
 pub struct GrpcServer {
     /// The address to bind the gRPC server to.
     bind_socket_address: SocketAddr,
-
-    /// The TLS manager, if it is enabled.
-    tls_manager: Option<TlsManager>,
 }
 
 impl GrpcServer {
@@ -30,11 +26,9 @@ impl GrpcServer {
     ///
     /// * `bind_address` - The address to bind the gRPC server to.
     /// * `bind_port` - The port to bind the gRPC server to.
-    /// * `tls_manager` - The TLS manager, if TLS is enabled.
     pub fn new(
         bind_address: String,
         bind_port: u16,
-        tls_manager: Option<TlsManager>,
     ) -> Result<Self> {
         let bind_socket_address = format!("{}:{}", bind_address, bind_port)
             .parse()
@@ -47,7 +41,6 @@ impl GrpcServer {
 
         Ok(Self {
             bind_socket_address,
-            tls_manager,
         })
     }
 
@@ -57,26 +50,6 @@ impl GrpcServer {
         event!(Level::INFO, bind_address = %self.bind_socket_address, "Starting gRPC server");
 
         let mut server_builder = Server::builder().layer(TraceLayer::new_for_grpc());
-
-        // If the TLS manager is present, configure the gRPC server with TLS
-        if let Some(tls_manager) = &self.tls_manager {
-            event!(Level::DEBUG, "Configuring the gRPC server for TLS");
-
-            let cert_data = tls_manager
-                .cert_data()
-                .with_context(|| "The certificate data is missing")?;
-
-            let key_data = tls_manager
-                .key_data()
-                .with_context(|| "The private key data is missing")?;
-
-            let tls_config =
-                ServerTlsConfig::new().identity(Identity::from_pem(cert_data, key_data));
-
-            server_builder = server_builder
-                .tls_config(tls_config)
-                .with_context(|| "Unable to configure TLS with the gRPC server")?;
-        }
 
         // Configure the router
         let router = server_builder

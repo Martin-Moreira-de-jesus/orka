@@ -1,7 +1,7 @@
 use tonic::{Request, Response, Status, Result};
 use tokio_stream::wrappers::ReceiverStream;
 use orka_proto::node_agent::{Empty, Workload, workload_service_server::WorkloadService, WorkloadSignal, WorkloadStatus};
-use crate::container::client::ContainerClient;
+use crate::workload_manager::container::client::ContainerClient;
 
 pub struct WorkloadSvc {}
 

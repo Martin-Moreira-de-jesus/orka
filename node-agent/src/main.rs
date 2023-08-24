@@ -1,4 +1,5 @@
 mod args;
+mod workload_manager;
 
 use args::CliArguments;
 use clap::Parser;
@@ -7,6 +8,7 @@ use tracing::{event, Level};
 use tracing_log::AsTrace;
 use uuid::Uuid;
 use orka_proto::scheduler_agent::ConnectionRequest;
+use workload_manager::grpc;
 
 #[tokio::main]
 async fn main() {
@@ -37,4 +39,14 @@ async fn main() {
     }).await.expect("Failed to join cluster");
 
     event!(Level::INFO, "Joined cluster");
+
+    let grpc = grpc::server::GrpcServer::new(
+        args.node_agent_address,
+        args.node_agent_port
+    );
+    let server = grpc.map_err(|e| {
+        event!(Level::ERROR, "Failed to create gRPC server: {:?}", e);
+    }).expect("Failed to create gRPC server");
+
+    server.start_server().await.expect("Failed to start gRPC server");
 }
