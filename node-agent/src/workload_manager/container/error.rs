@@ -1,3 +1,4 @@
+use anyhow::Error;
 use thiserror::Error;
 use tonic::Status;
 
@@ -10,5 +11,7 @@ pub enum ContainerClientError {
     #[error("Container {container_id:?} not found")]
     NotFound { container_id: String },
     #[error("Unknown error occured {error:?}")]
-    Unknown { error: Status },
+    Unknown { error: Error },
+    #[error("gRPC with error code {status:?} occured")]
+    GRPCError { status: Status },
 }
