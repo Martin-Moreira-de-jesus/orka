@@ -6,6 +6,8 @@ use tonic::Status;
 pub enum ContainerClientError {
     #[error("Socket {sock_path:?} not found")]
     ContainerdSocketNotFound { sock_path: String },
+    #[error("Workload {workload_id:?} is not a container")]
+    NotAContainer { workload_id: String },
     #[error("Container {container_id:?} already exists")]
     AlreadyExists { container_id: String },
     #[error("Container {container_id:?} not found")]
