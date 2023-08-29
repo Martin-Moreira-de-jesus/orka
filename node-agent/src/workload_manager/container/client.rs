@@ -106,19 +106,17 @@ impl ContainerClient {
         if workload.r#type != Type::Container as i32 {
             return Err(ContainerClientError::NotAContainer {
                 workload_id: workload.name.to_string(),
-            }
-            .into());
+            });
         }
 
         match self.info(&workload.name).await {
             Ok(_) => {
                 return Err(ContainerClientError::AlreadyExists {
                     container_id: workload.name.to_string(),
-                }
-                .into())
+                })
             }
             Err(ContainerClientError::NotFound { container_id: _ }) => {}
-            Err(error) => return Err(error.into()),
+            Err(error) => return Err(error),
         }
 
         // TODO - use containerd library to create container instead of ctr
